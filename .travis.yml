@@ -1,0 +1,17 @@
+language: go
+
+go:
+  - 1.10
+
+# magic word to use faster/newer container-based architecture
+sudo: false
+
+before_install:
+  - go get -u github.com/golang/lint/golint
+  - go get -u github.com/stretchr/testify/require
+
+script: make
+
+notifications:
+  email:
+    on_success: never
