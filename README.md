@@ -11,6 +11,13 @@ go get -u github.com/stretchr/testify/require
 make
 ```
 
+## Setting interval messages
+
+``` sh
+mv intervals.go.sample intervals.go
+# edit intervals.go
+```
+
 ## Getting an access token
 
 After creating an app, Twitter allows you to create a
