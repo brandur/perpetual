@@ -1,28 +1,62 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/brandur/perpetual/updater"
 	"github.com/dghubble/oauth1"
 )
 
-func main() {
-	config := oauth1.NewConfig(mustEnv("CONSUMER_KEY"), mustEnv("CONSUMER_SECRET"))
-	token := oauth1.NewToken(mustEnv("ACCESS_TOKEN"), mustEnv("ACCESS_TOKEN_SECRET"))
+// Event is an event to be passed into the AWS Lambda handler.
+type Event struct {
+}
+
+// HandleRequest is the target to be invoked by AWS Lambda.
+func HandleRequest(ctx context.Context, event Event) (string, error) {
+	consumerKey, err := mustEnv("CONSUMER_KEY")
+	if err != nil {
+		return "", err
+	}
+	consumerSecret, err := mustEnv("CONSUMER_SECRET")
+	if err != nil {
+		return "", err
+	}
+	accessToken, err := mustEnv("ACCESS_TOKEN")
+	if err != nil {
+		return "", err
+	}
+	accessTokenSecret, err := mustEnv("ACCESS_TOKEN_SECRET")
+	if err != nil {
+		return "", err
+	}
+	screenName, err := mustEnv("SCREEN_NAME")
+	if err != nil {
+		return "", err
+	}
+
+	config := oauth1.NewConfig(consumerKey, consumerSecret)
+	token := oauth1.NewToken(accessToken, accessTokenSecret)
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	api := &updater.LiveTwitterAPI{
 		HTTPClient: httpClient,
-		ScreenName: mustEnv("SCREEN_NAME"),
+		ScreenName: screenName,
 	}
 
-	_, err := updater.Update(api, aeons, time.Now())
+	_, err = updater.Update(api, aeons, time.Now())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during update: %v\n", err)
+		return "", err
 	}
+
+	return "Successfully ran check", nil
+}
+
+func main() {
+	lambda.Start(HandleRequest)
 }
 
 //
@@ -79,11 +113,10 @@ func init() {
 	}
 }
 
-func mustEnv(key string) string {
+func mustEnv(key string) (string, error) {
 	val := os.Getenv(key)
 	if val == "" {
-		fmt.Fprintf(os.Stderr, "Need env key: %s\n", val)
-		os.Exit(1)
+		return "", fmt.Errorf("need env key: %s", val)
 	}
-	return val
+	return val, nil
 }
