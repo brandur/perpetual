@@ -3,6 +3,8 @@
 An experiment in long-term thinking.
 
 ``` sh
+go get -u github.com/aws/aws-lambda-go/lambda
+go get -u github.com/dghubble/oauth1
 go get -u github.com/golang/lint/golint
 go get -u github.com/stretchr/testify/require
 
@@ -18,3 +20,13 @@ the app's keys page.
 
 You will need to copy out all four of your consumer key,
 secret, access token, and access token secret.
+
+## Lambda
+
+1. Use `make package` to create a `.zip` to upload.
+2. Set "Handler" (under "Function Code") to the name of the
+   zip file, `perpetual`.
+3. Set environmental variables for each of the four keys
+   above.
+4. Set a tag for `app=perpetual` to make these easy to
+   find.

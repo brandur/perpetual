@@ -12,6 +12,11 @@ install:
 lint:
 	golint -set_exit_status ./...
 
+# Builds a package for upload to AWS Lambda.
+package:
+	GOOS=linux go build .
+	zip perpetual.zip ./perpetual
+
 test:
 	go test ./...
 
