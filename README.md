@@ -14,7 +14,7 @@ make
 ## Setting interval messages
 
 ``` sh
-mv intervals.go.sample intervals.go
+cp intervals.go.sample intervals.go
 # edit intervals.go
 ```
 
