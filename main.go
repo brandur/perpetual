@@ -6,10 +6,20 @@ import (
 	"time"
 
 	"github.com/brandur/perpetual/updater"
+	"github.com/dghubble/oauth1"
 )
 
 func main() {
-	_, err := updater.Update(nil, aeons, time.Now())
+	config := oauth1.NewConfig(mustEnv("CONSUMER_KEY"), mustEnv("CONSUMER_SECRET"))
+	token := oauth1.NewToken(mustEnv("ACCESS_TOKEN"), mustEnv("ACCESS_TOKEN_SECRET"))
+	httpClient := config.Client(oauth1.NoContext, token)
+
+	api := &updater.LiveTwitterAPI{
+		HTTPClient: httpClient,
+		ScreenName: mustEnv("SCREEN_NAME"),
+	}
+
+	_, err := updater.Update(api, aeons, time.Now())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during update: %v\n", err)
 	}
@@ -67,4 +77,13 @@ func init() {
 		{Target: addTenThousandYears(updater.MustParseTime("Jun 24 08:00:00 PST 2018")), // 10,000 years
 			Message: "Aeon 009 message"},
 	}
+}
+
+func mustEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		fmt.Fprintf(os.Stderr, "Need env key: %s\n", val)
+		os.Exit(1)
+	}
+	return val
 }
