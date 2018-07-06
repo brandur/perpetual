@@ -24,21 +24,25 @@ func Update(api TwitterAPI, aeons []*Aeon, now time.Time) (int, error) {
 	var id int
 	var ok bool
 
-	i := api.ListTweets()
+	it := api.ListTweets()
 
 	fmt.Printf("Iterating backward through tweets\n")
 
 	// Keep in mind that we expect our API to return tweets in reverse order
 	// (i.e., newest first). Many assumptions are built into this code to take
 	// advantage of that.
-	for i.Next() {
-		tweet := i.Value()
+	for it.Next() {
+		tweet := it.Value()
 
 		id, ok = extractAeonID(tweet.Message)
 		if ok {
 			fmt.Printf("Found aeon ID: %v\n", id)
 			break
 		}
+	}
+
+	if it.Err() != nil {
+		return -1, it.Err()
 	}
 
 	var nextAeonID int
