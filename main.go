@@ -47,7 +47,7 @@ func HandleRequest(ctx context.Context, event Event) (string, error) {
 		ScreenName: screenName,
 	}
 
-	_, err = updater.Update(api, aeons, time.Now())
+	_, err = updater.Update(api, intervals, time.Now())
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +68,7 @@ func main() {
 // up which still fits within time.Duration's maximum size of ~290 years.
 const hundredYears = time.Hour * 24 * 365 * 100
 
-var aeons []*updater.Aeon
+var intervals []*updater.Interval
 
 // time.Parse won't parse a 5-digit years, so we need a little hackiness to get
 // us to ten thousand. Unfortunately, this is nowhere near as clean as other
@@ -83,33 +83,33 @@ func addTenThousandYears(t time.Time) time.Time {
 }
 
 func init() {
-	aeons = []*updater.Aeon{
+	intervals = []*updater.Interval{
 		{Target: updater.MustParseTime("Jun 24 08:00:00 PST 2018"), // base time
-			Message: "Aeon 001 message"},
+			Message: "Interval 001 message"},
 
 		{Target: updater.MustParseTime("Jun 25 08:00:00 PST 2018"), // 1 day
-			Message: "Aeon 002 message"},
+			Message: "Interval 002 message"},
 
 		{Target: updater.MustParseTime("Jul 01 08:00:00 PST 2018"), // 1 week
-			Message: "Aeon 003 message"},
+			Message: "Interval 003 message"},
 
 		{Target: updater.MustParseTime("Jul 24 08:00:00 PST 2018"), // 1 month
-			Message: "Aeon 004 message"},
+			Message: "Interval 004 message"},
 
 		{Target: updater.MustParseTime("Jun 24 08:00:00 PST 2019"), // 1 year
-			Message: "Aeon 005 message"},
+			Message: "Interval 005 message"},
 
 		{Target: updater.MustParseTime("Jun 24 08:00:00 PST 2028"), // 10 years
-			Message: "Aeon 006 message"},
+			Message: "Interval 006 message"},
 
 		{Target: updater.MustParseTime("Jun 24 08:00:00 PST 2118"), // 100 years
-			Message: "Aeon 007 message"},
+			Message: "Interval 007 message"},
 
 		{Target: updater.MustParseTime("Jun 24 08:00:00 PST 3018"), // 1,000 years
-			Message: "Aeon 008 message"},
+			Message: "Interval 008 message"},
 
 		{Target: addTenThousandYears(updater.MustParseTime("Jun 24 08:00:00 PST 2018")), // 10,000 years
-			Message: "Aeon 009 message"},
+			Message: "Interval 009 message"},
 	}
 }
 

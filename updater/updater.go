@@ -7,20 +7,20 @@ import (
 	"time"
 )
 
-var aeonFormat = "IE%03d: %s"
-var aeonPattern = regexp.MustCompile(`^IE(\d{3}): `)
+var intervalFormat = "LHI%03d: %s"
+var intervalPattern = regexp.MustCompile(`^LHI(\d{3}): `)
 
 // Update iterates through an account's tweets as far back as necessary to
-// discover the last posted aeon, then decides whether or not to post a new
-// aeon based off of the next aeon's target time.
+// discover the last posted interval, then decides whether or not to post a new
+// interval based off of the next interval's target time.
 //
 // now is injected as a parameter for better testability. It's safe to pass
 // this as time.Now in most cases.
 //
-// Update returns an integer representing the ID of the aeon that was posted if
+// Update returns an integer representing the ID of the interval that was posted if
 // one was posted, or -1 otherwise. An error is returned if there was a problem
 // communicating with Twitter's API.
-func Update(api TwitterAPI, aeons []*Aeon, now time.Time) (int, error) {
+func Update(api TwitterAPI, intervals []*Interval, now time.Time) (int, error) {
 	var id int
 	var ok bool
 
@@ -34,9 +34,9 @@ func Update(api TwitterAPI, aeons []*Aeon, now time.Time) (int, error) {
 	for it.Next() {
 		tweet := it.Value()
 
-		id, ok = extractAeonID(tweet.Message)
+		id, ok = extractIntervalID(tweet.Message)
 		if ok {
-			fmt.Printf("Found aeon ID: %v\n", id)
+			fmt.Printf("Found interval ID: %v\n", id)
 			break
 		}
 	}
@@ -45,43 +45,43 @@ func Update(api TwitterAPI, aeons []*Aeon, now time.Time) (int, error) {
 		return -1, it.Err()
 	}
 
-	var nextAeonID int
+	var nextIntervalID int
 	if ok {
 		// Pick the next in the series
-		nextAeonID = id + 1
+		nextIntervalID = id + 1
 	} else {
-		// If ok is false, we never extracted an aeon ID, which means that this
-		// program has never posted before. Pick the first aeon ID in the
+		// If ok is false, we never extracted an interval ID, which means that this
+		// program has never posted before. Pick the first interval ID in the
 		// series.
-		nextAeonID = 0
+		nextIntervalID = 0
 	}
 
-	fmt.Printf("Next aeon ID: %v\n", nextAeonID)
+	fmt.Printf("Next interval ID: %v\n", nextIntervalID)
 
-	if nextAeonID >= len(aeons) {
-		fmt.Printf("There is no next aeon; this program is done\n")
+	if nextIntervalID >= len(intervals) {
+		fmt.Printf("There is no next interval; this program is done\n")
 		return -1, nil
 	}
 
-	// Check if the Aeon is ready to be posted
-	aeon := aeons[nextAeonID]
+	// Check if the Interval is ready to be posted
+	interval := intervals[nextIntervalID]
 
-	if aeon.Target.After(now) {
-		fmt.Printf("Aeon not ready, target: %v\n", aeon.Target)
+	if interval.Target.After(now) {
+		fmt.Printf("Interval not ready, target: %v\n", interval.Target)
 		return -1, nil
 	}
 
-	tweet, err := api.PostTweet(formatAeon(nextAeonID, aeon.Message))
+	tweet, err := api.PostTweet(formatInterval(nextIntervalID, interval.Message))
 	if err != nil {
 		return -1, err
 	}
 
 	fmt.Printf("Posted tweet: %+v\n", tweet)
-	return nextAeonID, nil
+	return nextIntervalID, nil
 }
 
-func extractAeonID(content string) (int, bool) {
-	matches := aeonPattern.FindAllStringSubmatch(content, 1)
+func extractIntervalID(content string) (int, bool) {
+	matches := intervalPattern.FindAllStringSubmatch(content, 1)
 
 	if len(matches) == 0 {
 		return -1, false
@@ -101,6 +101,6 @@ func extractAeonID(content string) (int, bool) {
 	return id, true
 }
 
-func formatAeon(id int, message string) string {
-	return fmt.Sprintf(aeonFormat, id, message)
+func formatInterval(id int, message string) string {
+	return fmt.Sprintf(intervalFormat, id, message)
 }

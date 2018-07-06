@@ -7,53 +7,53 @@ import (
 	assert "github.com/stretchr/testify/require"
 )
 
-func TestAeonPattern(t *testing.T) {
-	assert.True(t, aeonPattern.MatchString("IE000: "))
-	assert.True(t, aeonPattern.MatchString("IE001: "))
-	assert.True(t, aeonPattern.MatchString("IE245: "))
+func TestIntervalPattern(t *testing.T) {
+	assert.True(t, intervalPattern.MatchString("LHI000: "))
+	assert.True(t, intervalPattern.MatchString("LHI001: "))
+	assert.True(t, intervalPattern.MatchString("LHI245: "))
 
-	assert.False(t, aeonPattern.MatchString("IE0x1: "))
-	assert.False(t, aeonPattern.MatchString(" IE001: "))
-	assert.False(t, aeonPattern.MatchString("IE001 should be coming soon!"))
-	assert.False(t, aeonPattern.MatchString("just a normal string"))
+	assert.False(t, intervalPattern.MatchString("LHI0x1: "))
+	assert.False(t, intervalPattern.MatchString(" LHI001: "))
+	assert.False(t, intervalPattern.MatchString("LHI001 should be coming soon!"))
+	assert.False(t, intervalPattern.MatchString("just a normal string"))
 }
 
-func TestExtractAeonID(t *testing.T) {
+func TestExtractIntervalID(t *testing.T) {
 	{
-		id, ok := extractAeonID("IE000: ")
+		id, ok := extractIntervalID("LHI000: ")
 		assert.Equal(t, 0, id)
 		assert.True(t, ok)
 	}
 
 	{
-		id, ok := extractAeonID("IE001: ")
+		id, ok := extractIntervalID("LHI001: ")
 		assert.Equal(t, 1, id)
 		assert.True(t, ok)
 	}
 
 	{
-		id, ok := extractAeonID("IE245: ")
+		id, ok := extractIntervalID("LHI245: ")
 		assert.Equal(t, 245, id)
 		assert.True(t, ok)
 	}
 
 	{
-		id, ok := extractAeonID("just a normal string")
+		id, ok := extractIntervalID("just a normal string")
 		assert.Equal(t, -1, id)
 		assert.False(t, ok)
 	}
 }
 
-func TestFormatAeon(t *testing.T) {
-	assert.Equal(t, "IE000: hello", formatAeon(0, "hello"))
-	assert.Equal(t, "IE001: hello, there", formatAeon(1, "hello, there"))
-	assert.Equal(t, "IE999: goodbye", formatAeon(999, "goodbye"))
+func TestFormatInterval(t *testing.T) {
+	assert.Equal(t, "LHI000: hello", formatInterval(0, "hello"))
+	assert.Equal(t, "LHI001: hello, there", formatInterval(1, "hello, there"))
+	assert.Equal(t, "LHI999: goodbye", formatInterval(999, "goodbye"))
 }
 
 func TestUpdate(t *testing.T) {
 	now := time.Now()
 
-	// Posts a first aeon given none existing
+	// Posts a first interval given none existing
 	{
 		id, err := Update(
 			&mockTwitterAPI{messages: []string{
@@ -61,8 +61,8 @@ func TestUpdate(t *testing.T) {
 				"tweet",
 				"first tweet",
 			}},
-			[]*Aeon{
-				{Target: now, Message: "Aeon 000"},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
 			},
 			now,
 		)
@@ -70,17 +70,17 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, 0, id)
 	}
 
-	// Posts nothing if the aeon is already posted
+	// Posts nothing if the interval is already posted
 	{
 		id, err := Update(
 			&mockTwitterAPI{messages: []string{
 				"this is a tweet",
-				"IE000: Aeon 000",
+				"LHI000: Interval 000",
 				"tweet",
 				"first tweet",
 			}},
-			[]*Aeon{
-				{Target: now, Message: "Aeon 000"},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
 			},
 			now,
 		)
@@ -88,20 +88,20 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, -1, id)
 	}
 
-	// Posts nothing if the aeon is already posted and future aeon is not ready
+	// Posts nothing if the interval is already posted and future interval is not ready
 	{
 		assert.False(t, now.After(now.Add(2*time.Minute)))
 
 		id, err := Update(
 			&mockTwitterAPI{messages: []string{
 				"this is a tweet",
-				"IE000: Aeon 000",
+				"LHI000: Interval 000",
 				"tweet",
 				"first tweet",
 			}},
-			[]*Aeon{
-				{Target: now, Message: "Aeon 000"},
-				{Target: now.Add(2 * time.Minute), Message: "Aeon 001"},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
+				{Target: now.Add(2 * time.Minute), Message: "Interval 001"},
 			},
 			now,
 		)
@@ -109,18 +109,18 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, -1, id)
 	}
 
-	// Posts a second aeon given one existing
+	// Posts a second interval given one existing
 	{
 		id, err := Update(
 			&mockTwitterAPI{messages: []string{
 				"this is a tweet",
-				"IE000: Aeon 000",
+				"LHI000: Interval 000",
 				"tweet",
 				"first tweet",
 			}},
-			[]*Aeon{
-				{Target: now, Message: "Aeon 000"},
-				{Target: now, Message: "Aeon 001"},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
+				{Target: now, Message: "Interval 001"},
 			},
 			now,
 		)
@@ -128,19 +128,19 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, 1, id)
 	}
 
-	// Posts nothing if both aeons are already posted
+	// Posts nothing if both intervals are already posted
 	{
 		id, err := Update(
 			&mockTwitterAPI{messages: []string{
-				"IE001: Aeon 001",
+				"LHI001: Interval 001",
 				"this is a tweet",
-				"IE000: Aeon 000",
+				"LHI000: Interval 000",
 				"tweet",
 				"first tweet",
 			}},
-			[]*Aeon{
-				{Target: now, Message: "Aeon 000"},
-				{Target: now, Message: "Aeon 001"},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
+				{Target: now, Message: "Interval 001"},
 			},
 			now,
 		)
@@ -148,7 +148,7 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, -1, id)
 	}
 
-	// Tests a full ladder of aeons. This one will probably be harder to debug,
+	// Tests a full ladder of intervals. This one will probably be harder to debug,
 	// so hopefully any real problems get caught by one of the simple cases
 	// above.
 	{
@@ -156,17 +156,17 @@ func TestUpdate(t *testing.T) {
 			"first tweet",
 		}
 
-		aeons := []*Aeon{
-			{Target: now.Add(0 * time.Minute), Message: "Aeon 000"},
-			{Target: now.Add(1 * time.Minute), Message: "Aeon 001"},
-			{Target: now.Add(2 * time.Minute), Message: "Aeon 002"},
-			{Target: now.Add(3 * time.Minute), Message: "Aeon 003"},
-			{Target: now.Add(4 * time.Minute), Message: "Aeon 004"},
-			{Target: now.Add(5 * time.Minute), Message: "Aeon 005"},
-			{Target: now.Add(6 * time.Minute), Message: "Aeon 006"},
-			{Target: now.Add(7 * time.Minute), Message: "Aeon 007"},
-			{Target: now.Add(8 * time.Minute), Message: "Aeon 008"},
-			{Target: now.Add(9 * time.Minute), Message: "Aeon 009"},
+		intervals := []*Interval{
+			{Target: now.Add(0 * time.Minute), Message: "Interval 000"},
+			{Target: now.Add(1 * time.Minute), Message: "Interval 001"},
+			{Target: now.Add(2 * time.Minute), Message: "Interval 002"},
+			{Target: now.Add(3 * time.Minute), Message: "Interval 003"},
+			{Target: now.Add(4 * time.Minute), Message: "Interval 004"},
+			{Target: now.Add(5 * time.Minute), Message: "Interval 005"},
+			{Target: now.Add(6 * time.Minute), Message: "Interval 006"},
+			{Target: now.Add(7 * time.Minute), Message: "Interval 007"},
+			{Target: now.Add(8 * time.Minute), Message: "Interval 008"},
+			{Target: now.Add(9 * time.Minute), Message: "Interval 009"},
 		}
 
 		for i := 0; i < 10; i++ {
@@ -176,7 +176,7 @@ func TestUpdate(t *testing.T) {
 			{
 				id, err := Update(
 					&mockTwitterAPI{messages: messages},
-					aeons,
+					intervals,
 					targetNow.Add(-1*time.Second),
 				)
 				assert.NoError(t, err)
@@ -187,24 +187,24 @@ func TestUpdate(t *testing.T) {
 			{
 				id, err := Update(
 					&mockTwitterAPI{messages: messages},
-					aeons,
+					intervals,
 					targetNow.Add(1*time.Second),
 				)
 				assert.NoError(t, err)
 				assert.Equal(t, i, id)
 			}
 
-			// Add this aeon to the mock API (note it gets *prepended* because
+			// Add this interval to the mock API (note it gets *prepended* because
 			// tweets are iterated in reverse chronological order) so that the
 			// next iteration of the loop will behave as expected
-			messages = append([]string{formatAeon(i, aeons[i].Message)}, messages...)
+			messages = append([]string{formatInterval(i, intervals[i].Message)}, messages...)
 
 			// Test a duplicate operation: now that our message is in the list,
 			// nothing should get posted
 			{
 				id, err := Update(
 					&mockTwitterAPI{messages: messages},
-					aeons,
+					intervals,
 					targetNow.Add(2*time.Second),
 				)
 				assert.NoError(t, err)
