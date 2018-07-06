@@ -162,9 +162,8 @@ func (it *LiveTweetIterator) Value() Tweet {
 
 // LiveTwitterAPI is an API implementation for the live Twitter API.
 type LiveTwitterAPI struct {
-	// AccessToken is the base64-encoded access token used to authorize against
-	// the Twitter API.
-	AccessToken string
+	// HTTPClient is an authorized HTTP client to use for requests.
+	HTTPClient *http.Client
 
 	// ScreenName is the Twitter screen name that will be read from and posted to.
 	ScreenName string
@@ -200,9 +199,9 @@ func (a *LiveTwitterAPI) encodeAndExecuteRequest(
 	req *http.Request, query url.Values, v interface{}) error {
 
 	req.URL.RawQuery = query.Encode()
+	query.Add("trim_user", "true")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := a.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -228,8 +227,6 @@ func (a *LiveTwitterAPI) newAuthorizedRequest(method, url string) (*http.Request
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Add("Authorization", "Bearer "+a.AccessToken)
 
 	return req, nil
 }

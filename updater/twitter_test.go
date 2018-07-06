@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dghubble/oauth1"
 	assert "github.com/stretchr/testify/require"
 )
 
@@ -93,10 +94,19 @@ func TestLiveTwitterAPI_PostTweet(t *testing.T) {
 
 func getLiveTwitterAPI() TwitterAPI {
 	fmt.Printf("Access token = %s\n", os.Getenv("ACCESS_TOKEN"))
+	fmt.Printf("Access token secret = %s\n", os.Getenv("ACCESS_TOKEN_SECRET"))
+
+	fmt.Printf("Consumer key = %s\n", os.Getenv("CONSUMER_KEY"))
+	fmt.Printf("Consumer secret = %s\n", os.Getenv("CONSUMER_SECRET"))
+
 	fmt.Printf("Screen name = %s\n", os.Getenv("SCREEN_NAME"))
 
+	config := oauth1.NewConfig(os.Getenv("CONSUMER_KEY"), os.Getenv("CONSUMER_SECRET"))
+	token := oauth1.NewToken(os.Getenv("ACCESS_TOKEN"), os.Getenv("ACCESS_TOKEN_SECRET"))
+	httpClient := config.Client(oauth1.NoContext, token)
+
 	return &LiveTwitterAPI{
-		AccessToken: os.Getenv("ACCESS_TOKEN"),
-		ScreenName:  os.Getenv("SCREEN_NAME"),
+		HTTPClient: httpClient,
+		ScreenName: os.Getenv("SCREEN_NAME"),
 	}
 }
