@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -39,7 +40,7 @@ type TweetIterator interface {
 // purposes of this project.
 type TwitterAPI interface {
 	ListTweets() TweetIterator
-	PostTweet(message string) (Tweet, error)
+	PostTweet(message string) (*Tweet, error)
 }
 
 //
@@ -94,13 +95,12 @@ func (it *LiveTweetIterator) Next() bool {
 
 	fmt.Printf("\nRequesting next page (max ID = %v)\n\n", it.lastID)
 
-	req, err := http.NewRequest("GET", "https://api.twitter.com/1.1/statuses/user_timeline.json", nil)
+	req, err := it.api.newAuthorizedRequest(
+		"GET", "https://api.twitter.com/1.1/statuses/user_timeline.json")
 	if err != nil {
 		it.err = err
 		return false
 	}
-
-	req.Header.Add("Authorization", "Bearer "+it.api.AccessToken)
 
 	query := req.URL.Query()
 	query.Add("count", "200") // 200 is the largest page allowed
@@ -120,32 +120,8 @@ func (it *LiveTweetIterator) Next() bool {
 		time.Sleep(1 * time.Second)
 	}
 
-	req.URL.RawQuery = query.Encode()
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		it.err = err
-		return false
-	}
-
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		it.err = err
-		return false
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		it.err = fmt.Errorf(
-			"Improper response from the Twitter API (status: %v): %s",
-			resp.Status,
-			string(data))
-		return false
-	}
-
 	var tweets []*liveTweet
-	err = json.Unmarshal(data, &tweets)
+	err = it.api.encodeAndExecuteRequest(req, query, &tweets)
 	if err != nil {
 		it.err = err
 		return false
@@ -200,7 +176,60 @@ func (a *LiveTwitterAPI) ListTweets() TweetIterator {
 }
 
 // PostTweet posts a tweet to the configured account.
-func (a *LiveTwitterAPI) PostTweet(message string) (Tweet, error) {
+func (a *LiveTwitterAPI) PostTweet(message string) (*Tweet, error) {
+	req, err := a.newAuthorizedRequest("POST", "https://api.twitter.com/1.1/statuses/update.json")
+	if err != nil {
+		return nil, err
+	}
+
 	fmt.Printf("Posting tweet: %v\n", message)
-	return Tweet{Message: message}, nil
+
+	query := req.URL.Query()
+	query.Add("status", message)
+
+	var tweet *liveTweet
+	err = a.encodeAndExecuteRequest(req, query, &tweet)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tweet{ID: tweet.ID, Message: tweet.Text}, nil
+}
+
+func (a *LiveTwitterAPI) encodeAndExecuteRequest(
+	req *http.Request, query url.Values, v interface{}) error {
+
+	req.URL.RawQuery = query.Encode()
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(
+			"Improper response from the Twitter API (status: %v): %s",
+			resp.Status,
+			string(data))
+	}
+
+	return json.Unmarshal(data, v)
+}
+
+func (a *LiveTwitterAPI) newAuthorizedRequest(method, url string) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+a.AccessToken)
+
+	return req, nil
 }

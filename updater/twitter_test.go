@@ -46,9 +46,9 @@ func (a *mockTwitterAPI) ListTweets() TweetIterator {
 	return &mockTweetIterator{messages: a.messages, position: -1}
 }
 
-func (a *mockTwitterAPI) PostTweet(message string) (Tweet, error) {
+func (a *mockTwitterAPI) PostTweet(message string) (*Tweet, error) {
 	fmt.Printf("Posting tweet: %v\n", message)
-	return Tweet{Message: message}, nil
+	return &Tweet{Message: message}, nil
 }
 
 //
@@ -58,13 +58,7 @@ func (a *mockTwitterAPI) PostTweet(message string) (Tweet, error) {
 func TestLiveTwitterAPI_ListTweets(t *testing.T) {
 	t.Skip("Makes live API requests")
 
-	fmt.Printf("Access token = %s\n", os.Getenv("ACCESS_TOKEN"))
-	fmt.Printf("Screen name = %s\n", os.Getenv("SCREEN_NAME"))
-
-	api := &LiveTwitterAPI{
-		AccessToken: os.Getenv("ACCESS_TOKEN"),
-		ScreenName:  os.Getenv("SCREEN_NAME"),
-	}
+	api := getLiveTwitterAPI()
 
 	it := api.ListTweets()
 	for it.Next() {
@@ -80,4 +74,29 @@ func TestLiveTwitterAPI_ListTweets(t *testing.T) {
 	}
 
 	assert.NoError(t, it.Err())
+}
+
+func TestLiveTwitterAPI_PostTweet(t *testing.T) {
+	t.Skip("Makes live API requests")
+
+	api := getLiveTwitterAPI()
+
+	tweet, err := api.PostTweet("Hello from Perpetual.")
+	assert.NoError(t, err)
+
+	fmt.Printf("Posted tweet: %+v\n", tweet)
+}
+
+//
+// Helpers
+//
+
+func getLiveTwitterAPI() TwitterAPI {
+	fmt.Printf("Access token = %s\n", os.Getenv("ACCESS_TOKEN"))
+	fmt.Printf("Screen name = %s\n", os.Getenv("SCREEN_NAME"))
+
+	return &LiveTwitterAPI{
+		AccessToken: os.Getenv("ACCESS_TOKEN"),
+		ScreenName:  os.Getenv("SCREEN_NAME"),
+	}
 }
