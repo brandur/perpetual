@@ -16,8 +16,9 @@ import (
 
 // Tweet represents a tweet returned from Twitter's API.
 type Tweet struct {
-	ID      uint64
-	Message string
+	CreatedAt time.Time
+	ID        uint64
+	Message   string
 }
 
 // TweetIterator iterates through a list of tweets that are returned from
@@ -72,8 +73,9 @@ type LiveTweetIterator struct {
 
 // liveTweet is a tweet that we decoded in a response from the Twitter API.
 type liveTweet struct {
-	ID   uint64 `json:"id"`
-	Text string `json:"text"`
+	CreatedAt string `json:"created_at"`
+	ID        uint64 `json:"id"`
+	Text      string `json:"text"`
 }
 
 // Err gets an error set on the iterator.
@@ -134,7 +136,17 @@ func (it *LiveTweetIterator) Next() bool {
 
 	it.currentTweets = make([]*Tweet, len(tweets))
 	for i, v := range tweets {
-		it.currentTweets[i] = &Tweet{ID: v.ID, Message: v.Text}
+		createdAt, err := parseTwitterTime(v.CreatedAt)
+		if err != nil {
+			it.err = err
+			return false
+		}
+
+		it.currentTweets[i] = &Tweet{
+			CreatedAt: createdAt,
+			ID:        v.ID,
+			Message:   v.Text,
+		}
 	}
 
 	// Set the page's last ID so we know where to start on the next iteration
@@ -192,7 +204,16 @@ func (a *LiveTwitterAPI) PostTweet(message string) (*Tweet, error) {
 		return nil, err
 	}
 
-	return &Tweet{ID: tweet.ID, Message: tweet.Text}, nil
+	createdAt, err := parseTwitterTime(tweet.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tweet{
+		CreatedAt: createdAt,
+		ID:        tweet.ID,
+		Message:   tweet.Text,
+	}, nil
 }
 
 func (a *LiveTwitterAPI) encodeAndExecuteRequest(
@@ -229,4 +250,8 @@ func (a *LiveTwitterAPI) newAuthorizedRequest(method, url string) (*http.Request
 	}
 
 	return req, nil
+}
+
+func parseTwitterTime(value string) (time.Time, error) {
+	return time.Parse("Mon Jan 2 15:04:05 -0700 2006", value)
 }

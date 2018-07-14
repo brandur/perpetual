@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// LHI: Long Heartbeat Interval
 var intervalFormat = "LHI%03d: %s"
 var intervalPattern = regexp.MustCompile(`^LHI(\d{3}): `)
 

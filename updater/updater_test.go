@@ -53,13 +53,18 @@ func TestFormatInterval(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	now := time.Now()
 
+	// We have a check to make sure that intervals are after tweets that are
+	// listed from Twitter, so just make sure any of the messages we preload
+	// were posted in the past.
+	past := now.Add(-1 * time.Second)
+
 	// Posts a first interval given none existing
 	{
 		id, err := Update(
-			&mockTwitterAPI{messages: []string{
-				"this is a tweet",
-				"tweet",
-				"first tweet",
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: past, Message: "this is a tweet"},
+				{CreatedAt: past, Message: "tweet"},
+				{CreatedAt: past, Message: "first tweet"},
 			}},
 			[]*Interval{
 				{Target: now, Message: "Interval 000"},
@@ -73,11 +78,11 @@ func TestUpdate(t *testing.T) {
 	// Posts nothing if the interval is already posted
 	{
 		id, err := Update(
-			&mockTwitterAPI{messages: []string{
-				"this is a tweet",
-				"LHI000: Interval 000",
-				"tweet",
-				"first tweet",
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: past, Message: "this is a tweet"},
+				{CreatedAt: past, Message: "LHI000: Interval 000"},
+				{CreatedAt: past, Message: "tweet"},
+				{CreatedAt: past, Message: "first tweet"},
 			}},
 			[]*Interval{
 				{Target: now, Message: "Interval 000"},
@@ -93,11 +98,11 @@ func TestUpdate(t *testing.T) {
 		assert.False(t, now.After(now.Add(2*time.Minute)))
 
 		id, err := Update(
-			&mockTwitterAPI{messages: []string{
-				"this is a tweet",
-				"LHI000: Interval 000",
-				"tweet",
-				"first tweet",
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: past, Message: "this is a tweet"},
+				{CreatedAt: past, Message: "LHI000: Interval 000"},
+				{CreatedAt: past, Message: "tweet"},
+				{CreatedAt: past, Message: "first tweet"},
 			}},
 			[]*Interval{
 				{Target: now, Message: "Interval 000"},
@@ -112,11 +117,11 @@ func TestUpdate(t *testing.T) {
 	// Posts a second interval given one existing
 	{
 		id, err := Update(
-			&mockTwitterAPI{messages: []string{
-				"this is a tweet",
-				"LHI000: Interval 000",
-				"tweet",
-				"first tweet",
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: past, Message: "this is a tweet"},
+				{CreatedAt: past, Message: "LHI000: Interval 000"},
+				{CreatedAt: past, Message: "tweet"},
+				{CreatedAt: past, Message: "first tweet"},
 			}},
 			[]*Interval{
 				{Target: now, Message: "Interval 000"},
@@ -131,12 +136,12 @@ func TestUpdate(t *testing.T) {
 	// Posts nothing if both intervals are already posted
 	{
 		id, err := Update(
-			&mockTwitterAPI{messages: []string{
-				"LHI001: Interval 001",
-				"this is a tweet",
-				"LHI000: Interval 000",
-				"tweet",
-				"first tweet",
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: past, Message: "LHI001: Interval 001"},
+				{CreatedAt: past, Message: "this is a tweet"},
+				{CreatedAt: past, Message: "LHI000: Interval 000"},
+				{CreatedAt: past, Message: "tweet"},
+				{CreatedAt: past, Message: "first tweet"},
 			}},
 			[]*Interval{
 				{Target: now, Message: "Interval 000"},
@@ -152,8 +157,8 @@ func TestUpdate(t *testing.T) {
 	// so hopefully any real problems get caught by one of the simple cases
 	// above.
 	{
-		messages := []string{
-			"first tweet",
+		tweets := []*Tweet{
+			{CreatedAt: past, Message: "first tweet"},
 		}
 
 		intervals := []*Interval{
@@ -175,7 +180,7 @@ func TestUpdate(t *testing.T) {
 			// At one second before target, make sure nothing gets posted
 			{
 				id, err := Update(
-					&mockTwitterAPI{messages: messages},
+					&mockTwitterAPI{tweets: tweets},
 					intervals,
 					targetNow.Add(-1*time.Second),
 				)
@@ -186,7 +191,7 @@ func TestUpdate(t *testing.T) {
 			// At one second after target, make sure we do post
 			{
 				id, err := Update(
-					&mockTwitterAPI{messages: messages},
+					&mockTwitterAPI{tweets: tweets},
 					intervals,
 					targetNow.Add(1*time.Second),
 				)
@@ -197,13 +202,15 @@ func TestUpdate(t *testing.T) {
 			// Add this interval to the mock API (note it gets *prepended* because
 			// tweets are iterated in reverse chronological order) so that the
 			// next iteration of the loop will behave as expected
-			messages = append([]string{formatInterval(i, intervals[i].Message)}, messages...)
+			tweets = append([]*Tweet{
+				{CreatedAt: past, Message: formatInterval(i, intervals[i].Message)},
+			}, tweets...)
 
 			// Test a duplicate operation: now that our message is in the list,
 			// nothing should get posted
 			{
 				id, err := Update(
-					&mockTwitterAPI{messages: messages},
+					&mockTwitterAPI{tweets: tweets},
 					intervals,
 					targetNow.Add(2*time.Second),
 				)

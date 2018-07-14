@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/dghubble/oauth1"
 	assert "github.com/stretchr/testify/require"
@@ -15,13 +16,13 @@ import (
 //
 
 type mockTweetIterator struct {
-	messages []string
+	tweets   []*Tweet
 	position int
 }
 
 func (i *mockTweetIterator) Next() bool {
 	i.position++
-	if i.position >= len(i.messages) {
+	if i.position >= len(i.tweets) {
 		return false
 	}
 	return true
@@ -36,20 +37,20 @@ func (i *mockTweetIterator) Value() Tweet {
 		panic("Must call Next on iterator before a call to Value is allowed")
 	}
 
-	return Tweet{Message: i.messages[i.position]}
+	return *i.tweets[i.position]
 }
 
 type mockTwitterAPI struct {
-	messages []string
+	tweets []*Tweet
 }
 
 func (a *mockTwitterAPI) ListTweets() TweetIterator {
-	return &mockTweetIterator{messages: a.messages, position: -1}
+	return &mockTweetIterator{tweets: a.tweets, position: -1}
 }
 
 func (a *mockTwitterAPI) PostTweet(message string) (*Tweet, error) {
 	fmt.Printf("Posting tweet: %v\n", message)
-	return &Tweet{Message: message}, nil
+	return &Tweet{CreatedAt: time.Now(), Message: message}, nil
 }
 
 //
@@ -86,6 +87,12 @@ func TestLiveTwitterAPI_PostTweet(t *testing.T) {
 	assert.NoError(t, err)
 
 	fmt.Printf("Posted tweet: %+v\n", tweet)
+}
+
+func TestParseTwitterTime(t *testing.T) {
+	timeTime, err := parseTwitterTime("Mon Sep 10 14:04:58 +0000 2012")
+	assert.NoError(t, err)
+	assert.Equal(t, "2012-09-10T14:04:58Z", timeTime.Format(time.RFC3339))
 }
 
 //
