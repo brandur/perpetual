@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -57,6 +58,27 @@ func TestUpdate(t *testing.T) {
 	// listed from Twitter, so just make sure any of the messages we preload
 	// were posted in the past.
 	past := now.Add(-1 * time.Second)
+
+	// A special error case: if there were no posted intervals and the last
+	// tweet was after the beginning of our intervals, we don't post because it
+	// can't be sure whether we did already or not.
+	{
+		future := now.Add(1 * time.Second)
+
+		_, err := Update(
+			&mockTwitterAPI{tweets: []*Tweet{
+				{CreatedAt: future, Message: "this is a tweet"},
+			}},
+			[]*Interval{
+				{Target: now, Message: "Interval 000"},
+			},
+			now,
+		)
+		assert.Error(t, fmt.Errorf(
+			"Last available tweet is after beginning of intervals; can't be sure "+
+				"if we've already posted or not so electing not to",
+		), err)
+	}
 
 	// Posts a first interval given none existing
 	{

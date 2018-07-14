@@ -23,6 +23,7 @@ var intervalPattern = regexp.MustCompile(`^LHI(\d{3}): `)
 // communicating with Twitter's API.
 func Update(api TwitterAPI, intervals []*Interval, now time.Time) (int, error) {
 	var id int
+	var lastTweet *Tweet
 	var ok bool
 
 	it := api.ListTweets()
@@ -33,9 +34,9 @@ func Update(api TwitterAPI, intervals []*Interval, now time.Time) (int, error) {
 	// (i.e., newest first). Many assumptions are built into this code to take
 	// advantage of that.
 	for it.Next() {
-		tweet := it.Value()
+		lastTweet = it.Value()
 
-		id, ok = extractIntervalID(tweet.Message)
+		id, ok = extractIntervalID(lastTweet.Message)
 		if ok {
 			fmt.Printf("Found interval ID: %v\n", id)
 			break
@@ -51,6 +52,29 @@ func Update(api TwitterAPI, intervals []*Interval, now time.Time) (int, error) {
 		// Pick the next in the series
 		nextIntervalID = id + 1
 	} else {
+		// A special case: the Twitter API has a fundamental limitation in that
+		// it will not return every tweet. At some point when you go too far
+		// back, it gives up and gives you nothing more.
+		//
+		// This puts us in an awkward place. It's possible that for our longer
+		// intervals there's been a lot of time and many tweets posted between
+		// the last interval and now. The last interval was posted, but we
+		// can't see it because it's outside of the set of tweets that Twitter
+		// will return. If we posted in this state, it's possible that we'd
+		// accidentally just restart the whole interval sequence all over and
+		// double-post everything.
+		//
+		// To avoid that failure case, we just error and do nothing. This does
+		// put us in a reasonably likely case of failing to post far future
+		// intervals because of this limitation, but there's little we can do
+		// to rectify that.
+		if lastTweet != nil && lastTweet.CreatedAt.After(intervals[0].Target) {
+			return -1, fmt.Errorf(
+				"Last available tweet is after beginning of intervals; can't be sure " +
+					"if we've already posted or not so electing not to",
+			)
+		}
+
 		// If ok is false, we never extracted an interval ID, which means that this
 		// program has never posted before. Pick the first interval ID in the
 		// series.

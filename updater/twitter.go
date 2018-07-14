@@ -34,7 +34,7 @@ type Tweet struct {
 type TweetIterator interface {
 	Err() error
 	Next() bool
-	Value() Tweet
+	Value() *Tweet
 }
 
 // TwitterAPI is a subset of the implementation of Twitter's API needed for the
@@ -160,7 +160,7 @@ func (it *LiveTweetIterator) Next() bool {
 
 // Value gets the value of the current element that the iterator is pointing
 // to.
-func (it *LiveTweetIterator) Value() Tweet {
+func (it *LiveTweetIterator) Value() *Tweet {
 	if it.err != nil {
 		panic("Iterator encountered an error; access it using Err")
 	}
@@ -169,7 +169,7 @@ func (it *LiveTweetIterator) Value() Tweet {
 		panic("Must call Next on iterator before a call to Value is allowed")
 	}
 
-	return *it.currentTweets[it.position]
+	return it.currentTweets[it.position]
 }
 
 // LiveTwitterAPI is an API implementation for the live Twitter API.

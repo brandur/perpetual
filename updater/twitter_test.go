@@ -32,12 +32,12 @@ func (i *mockTweetIterator) Err() error {
 	return nil
 }
 
-func (i *mockTweetIterator) Value() Tweet {
+func (i *mockTweetIterator) Value() *Tweet {
 	if i.position == -1 {
 		panic("Must call Next on iterator before a call to Value is allowed")
 	}
 
-	return *i.tweets[i.position]
+	return i.tweets[i.position]
 }
 
 type mockTwitterAPI struct {
