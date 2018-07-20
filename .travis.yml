@@ -13,7 +13,7 @@ before_install:
   - go get -u github.com/stretchr/testify/require
 
 before_script:
-  - cp intervals.go.example intervals.go
+  - cp intervals.go.sample intervals.go
 
 script: make
 
