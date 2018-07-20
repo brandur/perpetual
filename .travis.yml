@@ -12,6 +12,9 @@ before_install:
   - go get -u github.com/golang/lint/golint
   - go get -u github.com/stretchr/testify/require
 
+before_script:
+  - cp intervals.go.example intervals.go
+
 script: make
 
 notifications:
