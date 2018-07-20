@@ -46,9 +46,9 @@ func TestExtractIntervalID(t *testing.T) {
 }
 
 func TestFormatInterval(t *testing.T) {
-	assert.Equal(t, "LHI000: hello", formatInterval(0, "hello"))
-	assert.Equal(t, "LHI001: hello, there", formatInterval(1, "hello, there"))
-	assert.Equal(t, "LHI999: goodbye", formatInterval(999, "goodbye"))
+	assert.Equal(t, "LHI000: hello", FormatInterval(0, "hello"))
+	assert.Equal(t, "LHI001: hello, there", FormatInterval(1, "hello, there"))
+	assert.Equal(t, "LHI999: goodbye", FormatInterval(999, "goodbye"))
 }
 
 func TestUpdate(t *testing.T) {
@@ -225,7 +225,7 @@ func TestUpdate(t *testing.T) {
 			// tweets are iterated in reverse chronological order) so that the
 			// next iteration of the loop will behave as expected
 			tweets = append([]*Tweet{
-				{CreatedAt: past, Message: formatInterval(i, intervals[i].Message)},
+				{CreatedAt: past, Message: FormatInterval(i, intervals[i].Message)},
 			}, tweets...)
 
 			// Test a duplicate operation: now that our message is in the list,
