@@ -13,6 +13,12 @@ const maxTweetLength = 280
 // tweet.
 func TestIntervalLengths(t *testing.T) {
 	for _, interval := range intervals {
-		assert.True(t, len(updater.FormatInterval(0, interval.Message)) < maxTweetLength)
+		length := len(updater.FormatInterval(0, interval.Message))
+		assert.True(t,
+			length < maxTweetLength,
+			"Interval message is too long for a tweet: %s (%v characters)",
+			interval.Message,
+			length,
+		)
 	}
 }
