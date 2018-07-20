@@ -11,6 +11,12 @@ import (
 var intervalFormat = "LHI%03d: %s"
 var intervalPattern = regexp.MustCompile(`^LHI(\d{3}): `)
 
+// FormatInterval formats an interval message into a full tweet by prepending
+// the "magic" interval string.
+func FormatInterval(id int, message string) string {
+	return fmt.Sprintf(intervalFormat, id, message)
+}
+
 // Update iterates through an account's tweets as far back as necessary to
 // discover the last posted interval, then decides whether or not to post a new
 // interval based off of the next interval's target time.
@@ -96,7 +102,7 @@ func Update(api TwitterAPI, intervals []*Interval, now time.Time) (int, error) {
 		return -1, nil
 	}
 
-	tweet, err := api.PostTweet(formatInterval(nextIntervalID, interval.Message))
+	tweet, err := api.PostTweet(FormatInterval(nextIntervalID, interval.Message))
 	if err != nil {
 		return -1, err
 	}
@@ -124,8 +130,4 @@ func extractIntervalID(content string) (int, bool) {
 	}
 
 	return id, true
-}
-
-func formatInterval(id int, message string) string {
-	return fmt.Sprintf(intervalFormat, id, message)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/brandur/perpetual/updater"
 	assert "github.com/stretchr/testify/require"
 )
 
@@ -12,6 +13,6 @@ const maxTweetLength = 280
 // tweet.
 func TestIntervalLengths(t *testing.T) {
 	for _, interval := range intervals {
-		assert.True(t, len(interval.Message) < maxTweetLength)
+		assert.True(t, len(updater.FormatInterval(0, interval.Message)) < maxTweetLength)
 	}
 }
